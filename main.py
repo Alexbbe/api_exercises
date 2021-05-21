@@ -260,7 +260,7 @@ class WengerApi:
             return f"The exercise {exercise_id} in day {day_id} doesn't exists"
 
         self.delete_req('set', exercise_id)
-        return "Exercise was deleted succesfully"
+        return "Exercise was deleted succesfully!!!!!"
 
 
 

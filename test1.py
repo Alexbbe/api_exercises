@@ -37,8 +37,8 @@ login2 = WengerApi("bbadescu", "TryingVPN!", "Token 3a3e4cfc386b8e7c0ea6e98a922b
 
 
 #ex4
-name_of_workout = "Workout4"
-add_workout = login2.add_workout_day(name_of_workout,"This is workout4")
+name_of_workout = "Workout5"
+add_workout = login2.add_workout_day(name_of_workout,"This is workout5")
 print(add_workout)
 # create days for the added workout
 
