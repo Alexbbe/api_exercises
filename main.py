@@ -81,11 +81,11 @@ class WengerApi:
     #     else:
     #         print("Request Error!")
 
-    def parse_toml(self, toml_file):
-        with open(toml_file) as file:
-            data = file.read()
-        parsed_toml = toml.loads(data)
-        return parsed_toml
+    # def parse_toml(self, toml_file):
+    #     with open(toml_file) as file:
+    #         data = file.read()
+    #     parsed_toml = toml.loads(data)
+    #     return parsed_toml
 
     # def get_nutrition_plans_list(self):
     #     a = self.parse_toml(toml_file='toml_file.txt')
@@ -144,19 +144,30 @@ class WengerApi:
 
     def add_workout_day(self,name,description):
         data = {
+
             "name":name,
             "description":description
         }
 
-        self.post_req('workout',data)
+        return self.post_req('workout',data)
 
     def add_day(self,training,description,day):
+
+        workouts = self.get_req('workout')
+        list_of_workout = list()
+        for workout in workouts["results"]:
+            list_of_workout.append(workout["id"])
+
+        if training not in list_of_workout:
+            return f"The training with id {training} doesn't exists!"
+
         data ={
+
             "training":training,
             "description":description,
             "day":day
         }
-        self.post_req('day',data)
+        return self.post_req('day',data)
 
 
     def add_exercise(self,exerciseday,sets,order):
@@ -166,7 +177,7 @@ class WengerApi:
             'order':order
         }
 
-        self.post_req('set',data)
+        return self.post_req('set',data)
 
     def setting_exercise_set(self, exercise,repetition_unit,reps,weight,weight_unit,rir):
 
@@ -179,8 +190,7 @@ class WengerApi:
             'rir':rir,
         }
 
-        self.post_req('setting',data)
-
+        return self.post_req('setting',data)
 
     def add_schedule(self,name,start_date,is_active,is_loop):
         data = {
@@ -190,7 +200,7 @@ class WengerApi:
             'is_loop':is_loop
 
         }
-        self.post_req('schedule',data)
+        return self.post_req('schedule',data)
 
 
     def add_workout_to_schedule(self,schedule,workout,duration):
@@ -200,7 +210,7 @@ class WengerApi:
             'duration':duration
         }
 
-        self.post_req('schedulestep',data)
+        return self.post_req('schedulestep',data)
 
 
     def delete_workout(self, id):
@@ -217,18 +227,40 @@ class WengerApi:
 
 
 
-
-    def delete_exercise(self,id):
+    def delete_exercise(self,workout_id,day_id,exercise_id):
+        workouts = self.get_req('workout')
+        days = self.get_req('day')
         exercises = self.get_req('set')
-        list_of_id = list()
-        for exercise in exercises['results']:
-            list_of_id.append(exercise['id'])
+        list_of_workout = list()
+        list_of_days = list()
+        list_of_exercises = list()
 
-        if id in list_of_id:
-            self.delete_req('set',id)
-            return f"Exercise with id {id} was deleted successfully "
-        else:
-            return f"Exercise with id {id} was not found!"
+        for workout in workouts["results"]:
+            list_of_workout.append(workout["id"])
+        if workout_id not in list_of_workout:
+            return f"The workout with id {workout_id} couldn't be found"
+
+        for day in days["results"]:
+            if day["training"] == workout_id:
+                list_of_days.append(day["id"])
+
+        if day_id not in list_of_days:
+            return f"The day in workout with id {workout_id} and id {day_id} doesn't exists"
+
+        for exercise in exercises["results"]:
+            if exercise["exerciseday"] == day_id:
+                list_of_exercises.append(exercise["id"])
+
+        print(list_of_workout)
+        print(list_of_days)
+        print(list_of_exercises)
+
+        if exercise_id not in list_of_exercises:
+            return f"The exercise {exercise_id} in day {day_id} doesn't exists"
+
+        self.delete_req('set', exercise_id)
+        return "Exercise was deleted succesfully"
+
 
 
 
