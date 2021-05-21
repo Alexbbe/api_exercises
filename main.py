@@ -120,6 +120,7 @@ class WengerApi:
         if description == None:
 
             description = calendar.day_name[my_date.weekday()]
+
         data = {
             'description': description
         }
