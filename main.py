@@ -73,37 +73,13 @@ class WengerApi:
 
 
 
-    # def get_ingredients(self, limit=20, offset=0):
-    #     url = f'https://wger.de/api/v2/ingredient/?limit={limit}&offset={offset}'
-    #     r = requests.get(url=url)
-    #     if r.status_code == 200:
-    #         return r.json()['results']
-    #     else:
-    #         print("Request Error!")
-
-    # def parse_toml(self, toml_file):
-    #     with open(toml_file) as file:
-    #         data = file.read()
-    #     parsed_toml = toml.loads(data)
-    #     return parsed_toml
-
-    # def get_nutrition_plans_list(self):
-    #     a = self.parse_toml(toml_file='toml_file.txt')
-    #     return a['nutrition_plans']
-    #
-    # def get_nutrition_plans_meals(self):
-    #     b = self.get_nutrition_plans_list()
-    #     list1 = list()
-    #     list2 = list()
-    #     for elem in b:
-    #         list1.append(elem)
-    #     for elem1 in list1:
-    #         list2.append(b[elem1]['meals'])
-    #     return list2
-    #
-    # def get_items_from_meals(self):
-    #     list_of_meals = self.get_nutrition_plans_meals()
-    #     list1 = list()
+    def get_ingredients(self, limit=20, offset=0):
+        url = f'https://wger.de/api/v2/ingredient/?limit={limit}&offset={offset}'
+        r = requests.get(url=url)
+        if r.status_code == 200:
+            return r.json()['results']
+        else:
+            print("Request Error!")
 
 
 
@@ -134,11 +110,13 @@ class WengerApi:
         return self.post_req('meal',data)
 
     def add_meal_item(self,meal,ingredient,amount):
+
         data = {
             'meal':meal,
             'ingredient':ingredient,
             'amount':amount
         }
+
         return self.post_req('mealitem',data)
 
 
@@ -261,6 +239,97 @@ class WengerApi:
 
         self.delete_req('set', exercise_id)
         return "Exercise was deleted succesfully!!!!!"
+
+
+
+    def parse_toml(self, toml_file):
+        with open(toml_file) as file:
+            data = file.read()
+        parsed_toml = toml.loads(data)
+        return parsed_toml
+
+
+    def get_nutrition_plans_list(self):
+        a = self.parse_toml(toml_file='toml_file.toml')
+        dict1 = a['nutrition_plans']
+        return dict1
+
+    def get_nutrition_plans_meals(self,nutrition_plan):
+        b = self.get_nutrition_plans_list()
+        dict = b[nutrition_plan]["meals"]
+        return dict
+
+
+    def get_items_from_meals(self,nutrition_plan, meal):
+        list_of_meals = self.get_nutrition_plans_meals(nutrition_plan)
+        dict = list_of_meals[meal]["items"]
+        return dict
+
+
+    def add_nutrition_plans(self):
+        dict1 = self.get_nutrition_plans_list()
+        list_of_description = list(dict1.keys())
+        for nutrition_plan in list_of_description:
+            self.create_nutrition_plan(nutrition_plan)
+
+            if "meals" not in dict1[nutrition_plan]:
+                print("There are no meals to be added")
+            else:
+                dict2 = self.get_nutrition_plans_meals(nutrition_plan)
+                list1 = list(dict2.keys())
+                a = len(list1)
+                nutrition_plans = self.get_req('nutritionplan')
+
+                for plan in nutrition_plans["results"]:
+                    if plan["description"] == nutrition_plan:
+                        for i in range(a):
+                            self.create_meals_for_nutrition_plans(plan["id"])
+                        meals = self.get_req('meal')
+                        list_of_meal_ids = list()
+                        for meal in meals['results']:
+                            if meal['plan'] == plan['id']:
+                                list_of_meal_ids.append(meal['id'])
+
+                print(list_of_meal_ids)
+                print(list1)
+
+                meal_id_name = zip(list_of_meal_ids, list1)
+                meal_id_name_set = set(meal_id_name)
+                print(meal_id_name_set)
+
+                for meal in meal_id_name_set:
+                    if "items" not in dict2[meal[1]]:
+                        print ("There are no items in this meal")
+                    else:
+                        dict3 = self.get_items_from_meals(nutrition_plan,meal[1])
+                        for elem in dict3.values():
+                            meal_req = meal[0]
+                            amount_req = elem['amount']
+                            ingredient_req = elem['ingredient']
+                            self.add_meal_item(meal_req,ingredient_req,amount_req)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
