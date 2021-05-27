@@ -22,6 +22,7 @@ class WengerApi:
         self.login()
 
     def login(self):
+
         data = {"username": {self.username},
                 "password": {self.password},
                 "submit": "Login"}
@@ -39,18 +40,16 @@ class WengerApi:
         print(req.cookies)
         print(req.content)
         # print("The login get cookies are: ")
-        # print(login_get.cookies)
+        # print(login_get.cookies
 
     def get_req(self, object, offset=None, limit=None):
 
         g1 = requests.get('https://wger.de/api/v2/')
         url = g1.json().get(object)
         if url != None:
-            if offset is None and limit is None:
-                url1 = url
-            else:
-                url1 = url + f"?limit={limit}&offset={offset}"
-
+            req1 = requests.get(url=url, headers=self.header)
+            count = req1.json().get('count')
+            url1 = url + f"?limit={count}&offset=0"
             g = requests.get(url=url1, headers=self.header)
             if g.status_code == 200:
                 return g.json()
@@ -58,7 +57,6 @@ class WengerApi:
                 return g.status_code, "Couldn't make the request!"
         else:
             return False, 'Invalid url'
-
 
     def post_req(self,object, data):
 
@@ -74,8 +72,8 @@ class WengerApi:
         else:
             return False, 'Invalid url'
 
-
     def delete_req(self,object, id):
+
         g1 = requests.get('https://wger.de/api/v2/')
         url1 = g1.json().get(object)
         if url1 != None:
@@ -83,10 +81,10 @@ class WengerApi:
             req = requests.delete(url=url, headers=self.header)
             if req.status_code not in (200,202,204):
                 return req.status_code, f"The delete for id {id} couldn't be performed"
-            return req
+            return True, f"The delete for {object} with id {id} was performed" \
+                         f"succesfully! Status code is {req.status_code}"
         else:
             return False, "Error! The URL doesn't exists!"
-
 
     def create_weight_entry(self,date,value):
 
@@ -97,9 +95,7 @@ class WengerApi:
 
         return self.post_req('weightentry',data)
 
-
     def create_nutrition_plan(self,description=None):
-
 
         if description == None:
             my_date = date.today()
@@ -109,15 +105,12 @@ class WengerApi:
         }
         return self.post_req('nutritionplan', data)
 
-
-
     def create_meals_for_nutrition_plans(self,plan):
 
         data = {
             'plan': plan
         }
         return self.post_req('meal',data)
-
 
     def add_meal_item(self,meal,ingredient,amount):
 
@@ -129,9 +122,8 @@ class WengerApi:
 
         return self.post_req('mealitem',data)
 
-
-
     def add_workout_day(self,name,description):
+
         data = {
 
             "name":name,
@@ -160,7 +152,6 @@ class WengerApi:
         }
         return self.post_req('day',data)
 
-
     def add_exercise(self,exerciseday,sets,order):
 
         data = {
@@ -186,6 +177,7 @@ class WengerApi:
         return self.post_req('setting',data)
 
     def add_schedule(self,name,start_date,is_active,is_loop):
+
         data = {
             'name':name,
             'start_date':start_date,
@@ -195,8 +187,8 @@ class WengerApi:
         }
         return self.post_req('schedule',data)
 
-
     def add_workout_to_schedule(self,schedule,workout,duration):
+
         data = {
             'schedule':schedule,
             'workout':workout,
@@ -205,12 +197,12 @@ class WengerApi:
 
         return self.post_req('schedulestep',data)
 
-
     def delete_workout(self, id=None):
+
         workouts = self.get_req('workout')
         list_of_id = list()
-        for workout in workouts['results']:
-            list_of_id.append(workout['id'])
+        for workout in workouts.get('results',[]):
+            list_of_id.append(workout.get('id'))
         if id is not None:
             if id in list_of_id:
                 req = self.delete_req('workout',id)
@@ -219,87 +211,77 @@ class WengerApi:
                 return False, f"Workout with id {id} was not found!"
         else:
             if len(list_of_id) != 0:
+                undeleted_workouts = list()
                 for id1 in list_of_id:
-                    self.delete_req('workout',id1)
-
-                return True
+                    req2 = self.delete_req('workout',id1)
+                    if req2 is False:
+                        undeleted_workouts.append(id1)
+                if len(undeleted_workouts) == 0:
+                    return True, "All existing workouts has been deleted!"
+                else:
+                    return undeleted_workouts, f"The following workouts couldn't be deleted {undeleted_workouts}"
             else:
-                return False, "There are no workouts to be deteled"
+                return False, "There are no workouts to be deleted"
+
+    def delete_nutrition_plans(self):
+        nutrition_plans = self.get_req('nutritionplan')
+        for nutrition_plan in nutrition_plans.get('results',[]):
+            self.delete_req('nutritionplan',nutrition_plan.get('id'))
+
+    def delete_exercise(self, workout_id = None, day_id = None, exercise_id = None):
+        if workout_id is not None:
+            list_of_workouts = self.get_req('workout')
+            list_of_workouts_ids = list()
+            for workout in list_of_workouts.get('results',[]):
+                list_of_workouts_ids.append(workout.get('id'))
+
+            if day_id is not None:
+                list_of_days = self.get_req('day')
+                list_of_days_id = list()
+                for day in list_of_days.get('results',[]):
+                    list_of_days_id.append(day.get('id'))
+
+                if exercise_id is not None:
+                    list_of_exercises = self.get_req('set')
+                    list_of_exercises_ids = list()
+                    for exercise in list_of_exercises.get('results',[]):
+                        list_of_exercises_ids.append(exercise.get('id'))
+                    if exercise_id not in list_of_exercises_ids:
+                        return False, f"The exercise with id {exercise_id} doesn't exists in " \
+                                      f"day {day_id} and workout {workout_id}"
+                    else:
+                        req1 = self.delete_req('set',exercise_id)
+                        return req1
+                else:
+                    if day_id not in list_of_days_id:
+                        return False, f"The days with id {day_id} doesn't exists in workout {workout_id}"
+                    else:
+                        req2 = self.delete_req('day', day_id)
+                        return req2
+            else:
+                if workout_id not in list_of_workouts_ids:
+                    return False, f"The workout with id {workout_id} doesn't exists"
+                else:
+                    req3 = self.delete_workout(workout_id)
+                    return req3
+        else:
+            req4 = self.delete_workout()
+            return req4
 
 
 
-    def delete_exercise(self,workout_id=None,day_id=None,exercise_id=None):
-        if (exercise_id is not None) and (day_id is not None) and (workout_id is not None):
-
-            workouts = self.get_req('workout')
-            days = self.get_req('day')
-            exercises = self.get_req('set')
-            list_of_workout = list()
-            list_of_days = list()
-            list_of_exercises = list()
-            for workout in workouts.get("results"):
-                list_of_workout.append(workout.get("id"))
-            if workout_id not in list_of_workout:
-                return False, f"The workout with id {workout_id} couldn't be found"
-
-            for day in days["results"]:
-                if day.get("training") == workout_id:
-                    list_of_days.append(day.get("id"))
-            if day_id not in list_of_days:
-                return False, f"The day in workout with id {workout_id} and id {day_id} doesn't exists"
-
-            for exercise in exercises.get("results"):
-                if exercise.get("exerciseday") == day_id:
-                    list_of_exercises.append(exercise.get("id"))
-
-            if exercise_id not in list_of_exercises:
-                return f"The exercise {exercise_id} in day {day_id} doesn't exists"
-            del_req = self.delete_req('set', exercise_id)
-            return del_req, f"Exercise with {exercise_id} was deleted succesfully!"
-
-        elif (exercise_id is  None) and (day_id is not None) and (workout_id is not None):
-            workouts = self.get_req('workout')
-            days = self.get_req('day')
-            list_of_workouts = list()
-            list_of_days = list()
-            for workout in workouts.get('results'):
-                list_of_workouts.append(workout.get('id'))
-            if workout_id not in list_of_workouts:
-                return False,f"The workout with ID {workout_id} doesn't exists!"
-
-            for day in days.get('results'):
-                if day.get('training') == workout_id:
-                    list_of_days.append(day.get('id'))
-            if day_id not in list_of_days:
-                return False, f"The day in workout with id {workout_id} and id {day_id} doesn't exists"
-
-            del_req = self.delete_req('day',day_id)
-            return del_req, f"Day with {day_id} was deleted succesfully!"
 
 
-        elif (exercise_id is  None) and (day_id is None) and (workout_id is not None):
-            workouts = self.get_req('workout')
-            list_of_workouts = list()
-            for workout in workouts.get('results'):
-                list_of_workouts.append(workout.get('id'))
-            if workout_id not in list_of_workouts:
-                return False, f"The workout with ID {workout_id} doesn't exists!"
-            del_req = self.delete_workout(workout_id)
-            return del_req, f"Workout with {workout_id} was deteled successfully"
-
-        elif (exercise_id is None) and (day_id is None) and (workout_id is None):
-            return self.delete_workout()
-
-
-
+    #TOML part
     def parse_toml(self, toml_file):
+
         with open(toml_file) as file:
             data = file.read()
         parsed_toml = toml.loads(data)
         return parsed_toml
 
-
     def get_nutrition_plans_list(self):
+
         a = self.parse_toml(toml_file='toml_file.toml')
         dict1 = a['nutrition_plans']
         return dict1
@@ -309,14 +291,14 @@ class WengerApi:
         dict = b[nutrition_plan]["meals"]
         return dict
 
-
     def get_items_from_meals(self,nutrition_plan, meal):
+
         list_of_meals = self.get_nutrition_plans_meals(nutrition_plan)
         dict = list_of_meals[meal]["items"]
         return dict
 
-
     def add_nutrition_plans(self):
+
         dict1 = self.get_nutrition_plans_list()
         list_of_description = list(dict1.keys())
         for nutrition_plan in list_of_description:
@@ -340,8 +322,6 @@ class WengerApi:
                             if meal['plan'] == plan['id']:
                                 list_of_meal_ids.append(meal['id'])
 
-                print(list_of_meal_ids)
-                print(list1)
 
                 meal_id_name = zip(list_of_meal_ids, list1)
                 meal_id_name_set = set(meal_id_name)
