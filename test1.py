@@ -50,7 +50,6 @@ def exercise2():
                         ingredient = random.choice(list_of_ingredients)
                         kcal += ingredient.get('energy') * (amount/100)
                         if kcal > 1750:
-                            print(kcal)
                             break
                         add_item = login1.add_meal_item(meal.get('id'),ingredient.get('id'),amount)
                         print(add_item)
@@ -61,7 +60,6 @@ def exercise2():
                         print(add_item)
                         kcal += ingredient.get('energy') * (amount/100)
                         if kcal > 1750:
-                            print(kcal)
                             break
 
 
@@ -172,10 +170,10 @@ def exercise7():
 
 
 if __name__ == "__main__":
-    # exercise7()
+    exercise7()
     # exercise1()
     # exercise2()
     # exercise4()
     # exercise5()
     # exercise6()
-    login1.delete_nutrition_plans()
+    # login1.delete_nutrition_plans()

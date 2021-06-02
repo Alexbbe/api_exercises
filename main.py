@@ -22,7 +22,6 @@ class WengerApi:
         self.login()
 
     def login(self):
-
         data = {"username": {self.username},
                 "password": {self.password},
                 "submit": "Login"}
@@ -33,17 +32,14 @@ class WengerApi:
         session_id = login_get.cookies.get("sessionid")
         csrf_token = login_get.cookies.get("csrftoken")
         cookie_full = f"csrftoken={csrf_token}; sessionid={session_id}"
-
         self.header["Cookie"] = cookie_full
         req = requests.post(url=url, data=data, headers=self.header)
-        print("The login post cookies are: ")
-        print(req.cookies)
-        print(req.content)
-        # print("The login get cookies are: ")
-        # print(login_get.cookies
+        if req.status_code in  [200,201]:
+            return req, "The login was performed successfuly"
+        else:
+            return False, f"Error {req.status_code}"
 
-    def get_req(self, object, offset=None, limit=None):
-
+    def get_req(self,object):
         g1 = requests.get('https://wger.de/api/v2/')
         url = g1.json().get(object)
         if url != None:
@@ -52,7 +48,7 @@ class WengerApi:
             url1 = url + f"?limit={count}&offset=0"
             g = requests.get(url=url1, headers=self.header)
             if g.status_code == 200:
-                return g.json()
+                return g.json(), f"The get request for {object} was performed successfully"
             else:
                 return g.status_code, "Couldn't make the request!"
         else:
@@ -66,11 +62,20 @@ class WengerApi:
         if url1 != None:
             req = requests.post(url=url1,data=data,headers=self.header)
             if req.status_code == 201:
-                return req, f'The post request for {object} was done succusefuly'
+                return req, f'The post request for {object} was done successfully'
             else:
                 return {req.status_code}, 'Error  {req.status_code}'
         else:
             return False, 'Invalid url'
+
+    def name_to_id(self, name, object):
+        req = self.get_req(object)
+        for item in req[0].get('results', []):
+            if item.get('name') == name:
+                return item.get('id'), f"The id for {name} was provided successfully"
+            else:
+                return False, f"The item with name {name} doesn't have id"
+
 
     def delete_req(self,object, id):
 
@@ -81,8 +86,8 @@ class WengerApi:
             req = requests.delete(url=url, headers=self.header)
             if req.status_code not in (200,202,204):
                 return req.status_code, f"The delete for id {id} couldn't be performed"
-            return True, f"The delete for {object} with id {id} was performed" \
-                         f"succesfully! Status code is {req.status_code}"
+            return req, f"The delete for {object} with id {id} was performed" \
+                         f"successfully! Status code is {req.status_code}"
         else:
             return False, "Error! The URL doesn't exists!"
 
@@ -136,7 +141,7 @@ class WengerApi:
 
         workouts = self.get_req('workout')
         list_of_workout = list()
-        workouts_list = workouts.get('results')
+        workouts_list = workouts[0].get('results')
         if workouts_list != None:
 
             for workout in workouts_list:
@@ -201,7 +206,7 @@ class WengerApi:
 
         workouts = self.get_req('workout')
         list_of_id = list()
-        for workout in workouts.get('results',[]):
+        for workout in workouts[0].get('results',[]):
             list_of_id.append(workout.get('id'))
         if id is not None:
             if id in list_of_id:
@@ -271,6 +276,9 @@ class WengerApi:
 
 
     #TOML part
+
+
+
     def parse_toml(self, toml_file):
         with open(toml_file) as file:
             data = file.read()
@@ -297,18 +305,19 @@ class WengerApi:
         dict = a.get('workouts',{})
         return dict
 
-    def get_workout_days(self,workout,file):
-        a = self.get_workouts(file)
-        dict = a.get(workout,{}).get("days",{})
-        return dict
+    def get_workout_days(self,file, workout=None):
+            a = self.get_workouts(file)
+            dict = a.get(workout,{}).get("days",{})
+            return dict
 
-    def get_exercises(self,workout,day,file):
-        a = self.get_workout_days(workout,file)
+
+    def get_exercises(self,file,workout=None,day=None):
+        a = self.get_workout_days(file=file,workout=workout)
         dict = a.get(day,{}).get('exercises')
         return dict
 
     def get_exercises_settings(self,workout,day,exercise,file):
-        a = self.get_exercises(workout,day,file)
+        a = self.get_exercises(workout=workout,day=day,file=file)
         dict = a.get(exercise,{}).get('settings',{})
         return dict
 
@@ -338,14 +347,12 @@ class WengerApi:
             print(meal_id)
 
             if 'items' in meals_dict.get(meal):
-                print('a')
                 items_dict = self.get_items_from_meals(nutrition_plan=nutrition_plan,meal=meal,toml_file=toml_file_planes)
                 self.add_item_toml(items_dict,meal_id)
 
 
     def add_item_toml(self,items_dict,meal_id):
         for item in items_dict:
-            print('a')
             self.add_meal_item(meal_id,items_dict.get(item,{}).get('ingredient')
                                            ,items_dict.get(item,{}).get('amount'))
 
@@ -355,25 +362,22 @@ class WengerApi:
         if "workouts" in toml_parsed_file:
             toml_workouts = self.get_workouts(file=file)
             for workout in toml_workouts:
-                add_workout = self.add_workout_day(toml_workouts.get(workout,{}).get('name'),
+                req = self.add_workout_day(toml_workouts.get(workout,{}).get('name'),
                                                    toml_workouts.get(workout,{}).get('description'))
-                workout_id = add_workout[0].json().get('id')
+                workout_id = req[0].json().get('id')
                 if "days" in toml_workouts.get(workout).keys():
-                    toml_days = self.get_workout_days(workout, file)
-                    self.add_days_for_workouts_toml(toml_days=toml_days,workout_id=workout_id,
-                                                    workout=workout,file=file)
+                    toml_days = self.get_workout_days(file=file,workout=workout)
+                    self.add_days_for_workouts_toml(workout_id=workout_id,toml_days=toml_days,workout=workout,file=file)
 
 
-
-    def add_days_for_workouts_toml(self,toml_days,workout_id,workout,file):
-
+    def add_days_for_workouts_toml(self,workout_id,toml_days,workout,file):
         for day in toml_days:
             add_day1 = self.add_day(training=workout_id,description=toml_days.get(day,{}).get("description"),
                                     day=toml_days.get(day,{}).get('day'))
             day_id = add_day1[0].json().get('id')
-            print(toml_days)
+
             if "exercises" in toml_days.get(day).keys():
-                toml_exercise = self.get_exercises(workout,day,file)
+                toml_exercise = self.get_exercises(file=file,workout=workout,day=day)
                 self.add_exercise_per_day_toml(exercise_toml=toml_exercise,day_id=day_id,
                                                workout=workout,day=day,file=file)
 
@@ -383,7 +387,7 @@ class WengerApi:
             add_exercise = self.add_exercise(day_id,sets=exercise_toml.get(exercise,{}).get('sets'),order=1)
             exercise_id = add_exercise[0].json().get('id')
             if 'settings' in exercise_toml.get(exercise).keys():
-                toml_settings = self.get_exercises_settings(workout, day, exercise, file)
+                toml_settings = self.get_exercises_settings(workout=workout, day=day, exercise=exercise, file=file)
                 self.add_settings_per_exercise(toml_settings,exercise_id)
 
 
