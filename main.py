@@ -270,75 +270,133 @@ class WengerApi:
 
 
 
-
-
     #TOML part
     def parse_toml(self, toml_file):
-
         with open(toml_file) as file:
             data = file.read()
         parsed_toml = toml.loads(data)
         return parsed_toml
 
-    def get_nutrition_plans_list(self):
-
-        a = self.parse_toml(toml_file='toml_file.toml')
-        dict1 = a['nutrition_plans']
+    def get_nutrition_plans_list(self,toml_file):
+        a = self.parse_toml(toml_file=toml_file)
+        dict1 = a.get('nutrition_plans')
         return dict1
 
-    def get_nutrition_plans_meals(self,nutrition_plan):
-        b = self.get_nutrition_plans_list()
-        dict = b[nutrition_plan]["meals"]
+    def get_nutrition_plans_meals(self,nutrition_plan,toml_file):
+        b = self.get_nutrition_plans_list(toml_file)
+        dict = b.get(nutrition_plan,{}).get("meals",{})
         return dict
 
-    def get_items_from_meals(self,nutrition_plan, meal):
-
-        list_of_meals = self.get_nutrition_plans_meals(nutrition_plan)
-        dict = list_of_meals[meal]["items"]
+    def get_items_from_meals(self,nutrition_plan, meal,toml_file):
+        list_of_meals = self.get_nutrition_plans_meals(nutrition_plan,toml_file)
+        dict = list_of_meals.get(meal,{}).get("items",{})
         return dict
 
-    def add_nutrition_plans(self):
+    def get_workouts(self,file):
+        a = self.parse_toml(toml_file=file)
+        dict = a.get('workouts',{})
+        return dict
 
-        dict1 = self.get_nutrition_plans_list()
-        list_of_description = list(dict1.keys())
-        for nutrition_plan in list_of_description:
-            self.create_nutrition_plan(nutrition_plan)
+    def get_workout_days(self,workout,file):
+        a = self.get_workouts(file)
+        dict = a.get(workout,{}).get("days",{})
+        return dict
 
-            if "meals" not in dict1[nutrition_plan]:
-                print("There are no meals to be added")
-            else:
-                dict2 = self.get_nutrition_plans_meals(nutrition_plan)
-                list1 = list(dict2.keys())
-                a = len(list1)
-                nutrition_plans = self.get_req('nutritionplan')
+    def get_exercises(self,workout,day,file):
+        a = self.get_workout_days(workout,file)
+        dict = a.get(day,{}).get('exercises')
+        return dict
 
-                for plan in nutrition_plans["results"]:
-                    if plan["description"] == nutrition_plan:
-                        for i in range(a):
-                            self.create_meals_for_nutrition_plans(plan["id"])
-                        meals = self.get_req('meal')
-                        list_of_meal_ids = list()
-                        for meal in meals['results']:
-                            if meal['plan'] == plan['id']:
-                                list_of_meal_ids.append(meal['id'])
+    def get_exercises_settings(self,workout,day,exercise,file):
+        a = self.get_exercises(workout,day,file)
+        dict = a.get(exercise,{}).get('settings',{})
+        return dict
 
-
-                meal_id_name = zip(list_of_meal_ids, list1)
-                meal_id_name_set = set(meal_id_name)
-                print(meal_id_name_set)
-
-                for meal in meal_id_name_set:
-                    if "items" not in dict2[meal[1]]:
-                        print ("There are no items in this meal")
-                    else:
-                        dict3 = self.get_items_from_meals(nutrition_plan,meal[1])
-                        for elem in dict3.values():
-                            meal_req = meal[0]
-                            amount_req = elem['amount']
-                            ingredient_req = elem['ingredient']
-                            self.add_meal_item(meal_req,ingredient_req,amount_req)
+    def get_setting_informations(self,workout,day,exercise,setting,file):
+        a = self.get_exercises_settings(workout,day,exercise,file)
+        dict = a.get(setting,{})
+        return dict
 
 
+    def add_nutrition_plans_toml(self,toml_file_plans):
+        parsed_toml = self.parse_toml(toml_file=toml_file_plans)
+        if "nutrition_plans" in parsed_toml:
+            nutrition_plans_dict = self.get_nutrition_plans_list(toml_file_plans)
+            for nutrition_plan in nutrition_plans_dict:
+                add_plan = self.create_nutrition_plan(description=nutrition_plan)
+                nutrtion_plan_id = add_plan[0].json().get('id')
+                if 'meals' in nutrition_plans_dict[nutrition_plan]:
+                    meals_dict = self.get_nutrition_plans_meals(nutrition_plan,toml_file_plans)
+                    self.add_meals_toml(meals_dict, nutrtion_plan_id, nutrition_plan, toml_file_plans)
+
+
+    def add_meals_toml(self,meals_dict,nutrition_plan_id,nutrition_plan,toml_file_planes):
+
+        for meal in meals_dict:
+            add_meal = self.create_meals_for_nutrition_plans(nutrition_plan_id)
+            meal_id = add_meal[0].json().get('id')
+            print(meal_id)
+
+            if 'items' in meals_dict.get(meal):
+                print('a')
+                items_dict = self.get_items_from_meals(nutrition_plan=nutrition_plan,meal=meal,toml_file=toml_file_planes)
+                self.add_item_toml(items_dict,meal_id)
+
+
+    def add_item_toml(self,items_dict,meal_id):
+        for item in items_dict:
+            print('a')
+            self.add_meal_item(meal_id,items_dict.get(item,{}).get('ingredient')
+                                           ,items_dict.get(item,{}).get('amount'))
+
+
+    def add_workouts_toml_file(self,file):
+        toml_parsed_file = self.parse_toml(file)
+        if "workouts" in toml_parsed_file:
+            toml_workouts = self.get_workouts(file=file)
+            for workout in toml_workouts:
+                add_workout = self.add_workout_day(toml_workouts.get(workout,{}).get('name'),
+                                                   toml_workouts.get(workout,{}).get('description'))
+                workout_id = add_workout[0].json().get('id')
+                if "days" in toml_workouts.get(workout).keys():
+                    toml_days = self.get_workout_days(workout, file)
+                    self.add_days_for_workouts_toml(toml_days=toml_days,workout_id=workout_id,
+                                                    workout=workout,file=file)
+
+
+
+    def add_days_for_workouts_toml(self,toml_days,workout_id,workout,file):
+
+        for day in toml_days:
+            add_day1 = self.add_day(training=workout_id,description=toml_days.get(day,{}).get("description"),
+                                    day=toml_days.get(day,{}).get('day'))
+            day_id = add_day1[0].json().get('id')
+            print(toml_days)
+            if "exercises" in toml_days.get(day).keys():
+                toml_exercise = self.get_exercises(workout,day,file)
+                self.add_exercise_per_day_toml(exercise_toml=toml_exercise,day_id=day_id,
+                                               workout=workout,day=day,file=file)
+
+
+    def add_exercise_per_day_toml(self,exercise_toml,day_id,workout,day,file):
+        for exercise in exercise_toml:
+            add_exercise = self.add_exercise(day_id,sets=exercise_toml.get(exercise,{}).get('sets'),order=1)
+            exercise_id = add_exercise[0].json().get('id')
+            if 'settings' in exercise_toml.get(exercise).keys():
+                toml_settings = self.get_exercises_settings(workout, day, exercise, file)
+                self.add_settings_per_exercise(toml_settings,exercise_id)
+
+
+
+    def add_settings_per_exercise(self,toml_settings,exercise_id):
+        for setting in toml_settings:
+            self.setting_exercise_set(              set=exercise_id
+                                                    ,exercise=toml_settings.get(setting,{}).get('exercise'),
+                                                    repetition_unit=toml_settings.get(setting,{}).get('repetition_unit')
+                                                    ,reps=toml_settings.get(setting,{}).get('reps')
+                                                    ,weight=toml_settings.get(setting,{}).get('weight')
+                                                    ,weight_unit=toml_settings.get(setting,{}).get('weight_unit')
+                                                    ,rir=toml_settings.get(setting,{}).get('rir'))
 
 
 
