@@ -5,7 +5,7 @@ import pyramid.httpexceptions as exc
 from datetime import date
 import calendar
 import toml
-from pprint import pprint
+
 
 
 class WengerApi:
@@ -68,13 +68,14 @@ class WengerApi:
         else:
             return False, 'Invalid url'
 
-    def name_to_id(self, name, object):
+    def name_to_id(self, param1,param1_value ,param2, object):
         req = self.get_req(object)
+        print(req[0].get('results', []))
         for item in req[0].get('results', []):
-            if item.get('name') == name:
-                return item.get('id'), f"The id for {name} was provided successfully"
-            else:
-                return False, f"The item with name {name} doesn't have id"
+            if item.get(param1) == param1_value:
+                return item.get(param2), f"The id for {param1} was provided successfully"
+
+        return False, f"The item with {param1} doesn't have id"
 
 
     def delete_req(self,object, id):
@@ -181,6 +182,20 @@ class WengerApi:
 
         return self.post_req('setting',data)
 
+
+    def add_exercise_one_method(self,exercises,sets):
+        keys = list()
+        for exercise in exercises:
+            for i in range(sets):
+                keys.append(f'exercise{exercise}-{i}-reps')
+                keys.append(f'exercise{exercise}-{i}-repetition_unit')
+                keys.append(f'exercise{exercise}-{i}-weight')
+                keys.append(f'exercise{exercise}-{i}-weight_unit')
+                keys.append(f'exercise{exercise}-{i}-rir')
+
+        return keys
+
+
     def add_schedule(self,name,start_date,is_active,is_loop):
 
         data = {
@@ -230,7 +245,7 @@ class WengerApi:
 
     def delete_nutrition_plans(self):
         nutrition_plans = self.get_req('nutritionplan')
-        for nutrition_plan in nutrition_plans.get('results',[]):
+        for nutrition_plan in nutrition_plans[0].get('results',[]):
             self.delete_req('nutritionplan',nutrition_plan.get('id'))
 
     def delete_exercise(self, workout_id = None, day_id = None, exercise_id = None):
@@ -276,9 +291,6 @@ class WengerApi:
 
 
     #TOML part
-
-
-
     def parse_toml(self, toml_file):
         with open(toml_file) as file:
             data = file.read()
@@ -326,82 +338,83 @@ class WengerApi:
         dict = a.get(setting,{})
         return dict
 
+    #TOML part for nutrition plans
 
     def add_nutrition_plans_toml(self,toml_file_plans):
         parsed_toml = self.parse_toml(toml_file=toml_file_plans)
         if "nutrition_plans" in parsed_toml:
             nutrition_plans_dict = self.get_nutrition_plans_list(toml_file_plans)
-            for nutrition_plan in nutrition_plans_dict:
-                add_plan = self.create_nutrition_plan(description=nutrition_plan)
+            for nutrition_plan_key,nutrition_plan_value in nutrition_plans_dict.items():
+                add_plan = self.create_nutrition_plan(description=nutrition_plan_key)
                 nutrtion_plan_id = add_plan[0].json().get('id')
-                if 'meals' in nutrition_plans_dict[nutrition_plan]:
-                    meals_dict = self.get_nutrition_plans_meals(nutrition_plan,toml_file_plans)
-                    self.add_meals_toml(meals_dict, nutrtion_plan_id, nutrition_plan, toml_file_plans)
+                if 'meals' in nutrition_plan_value:
+                    meals_dict = nutrition_plan_value.get('meals')
+                    self.add_meals_toml(meals_dict, nutrtion_plan_id)
 
 
-    def add_meals_toml(self,meals_dict,nutrition_plan_id,nutrition_plan,toml_file_planes):
+    def add_meals_toml(self,meals_dict,nutrition_plan_id):
 
-        for meal in meals_dict:
+        for meal_key,meal_value in meals_dict.items():
             add_meal = self.create_meals_for_nutrition_plans(nutrition_plan_id)
             meal_id = add_meal[0].json().get('id')
-            print(meal_id)
 
-            if 'items' in meals_dict.get(meal):
-                items_dict = self.get_items_from_meals(nutrition_plan=nutrition_plan,meal=meal,toml_file=toml_file_planes)
+            if 'items' in meal_value:
+                items_dict = meal_value.get('items')
                 self.add_item_toml(items_dict,meal_id)
 
 
     def add_item_toml(self,items_dict,meal_id):
-        for item in items_dict:
-            self.add_meal_item(meal_id,items_dict.get(item,{}).get('ingredient')
-                                           ,items_dict.get(item,{}).get('amount'))
+        for item_key,item_value in items_dict.items():
+            self.add_meal_item(meal_id,item_value.get('ingredient')
+                                           ,item_value.get('amount'))
 
 
+
+    #TOML part for Workouts
     def add_workouts_toml_file(self,file):
-        toml_parsed_file = self.parse_toml(file)
-        if "workouts" in toml_parsed_file:
-            toml_workouts = self.get_workouts(file=file)
-            for workout in toml_workouts:
-                req = self.add_workout_day(toml_workouts.get(workout,{}).get('name'),
-                                                   toml_workouts.get(workout,{}).get('description'))
-                workout_id = req[0].json().get('id')
-                if "days" in toml_workouts.get(workout).keys():
-                    toml_days = self.get_workout_days(file=file,workout=workout)
-                    self.add_days_for_workouts_toml(workout_id=workout_id,toml_days=toml_days,workout=workout,file=file)
+        toml_workouts = self.get_workouts(file=file)
+        for workout_key,workout_value in toml_workouts.items():
+            self.add_workout_day(workout_value.get('name'),
+                                               workout_value.get('description'))
+
+            if "days" in workout_value:
+                toml_days = workout_value.get('days')
+                self.add_days_for_workouts_toml(toml_days=toml_days,workout=workout_key)
 
 
-    def add_days_for_workouts_toml(self,workout_id,toml_days,workout,file):
-        for day in toml_days:
-            add_day1 = self.add_day(training=workout_id,description=toml_days.get(day,{}).get("description"),
-                                    day=toml_days.get(day,{}).get('day'))
+    def add_days_for_workouts_toml(self,toml_days,workout):
+        workout_id_req = self.name_to_id(param1='name',param1_value=workout,param2='id',object='workout')
+        workout_id = workout_id_req[0]
+        for day_key,day_val in toml_days.items():
+            add_day1 = self.add_day(training=workout_id,description=day_val.get("description"),
+                                    day=day_val.get('day'))
+
             day_id = add_day1[0].json().get('id')
 
-            if "exercises" in toml_days.get(day).keys():
-                toml_exercise = self.get_exercises(file=file,workout=workout,day=day)
-                self.add_exercise_per_day_toml(exercise_toml=toml_exercise,day_id=day_id,
-                                               workout=workout,day=day,file=file)
+            if "exercises" in day_val:
+                toml_exercise = day_val.get('exercises')
+                self.add_exercise_per_day_toml(exercise_toml=toml_exercise,day_id=day_id)
 
 
-    def add_exercise_per_day_toml(self,exercise_toml,day_id,workout,day,file):
-        for exercise in exercise_toml:
-            add_exercise = self.add_exercise(day_id,sets=exercise_toml.get(exercise,{}).get('sets'),order=1)
+    def add_exercise_per_day_toml(self,exercise_toml,day_id):
+        for exercise_key, exercise_value in exercise_toml.items():
+            add_exercise = self.add_exercise(day_id,sets=exercise_value.get('sets'),order=1)
             exercise_id = add_exercise[0].json().get('id')
-            if 'settings' in exercise_toml.get(exercise).keys():
-                toml_settings = self.get_exercises_settings(workout=workout, day=day, exercise=exercise, file=file)
+            if 'settings' in exercise_value:
+                toml_settings = exercise_value.get('settings')
                 self.add_settings_per_exercise(toml_settings,exercise_id)
 
 
 
     def add_settings_per_exercise(self,toml_settings,exercise_id):
-        for setting in toml_settings:
+        for setting_key,setting_value in toml_settings.items():
             self.setting_exercise_set(              set=exercise_id
-                                                    ,exercise=toml_settings.get(setting,{}).get('exercise'),
-                                                    repetition_unit=toml_settings.get(setting,{}).get('repetition_unit')
-                                                    ,reps=toml_settings.get(setting,{}).get('reps')
-                                                    ,weight=toml_settings.get(setting,{}).get('weight')
-                                                    ,weight_unit=toml_settings.get(setting,{}).get('weight_unit')
-                                                    ,rir=toml_settings.get(setting,{}).get('rir'))
-
+                                                    ,exercise=setting_value.get('exercise'),
+                                                    repetition_unit=setting_value.get('repetition_unit')
+                                                    ,reps=setting_value.get('reps')
+                                                    ,weight=setting_value.get('weight')
+                                                    ,weight_unit=setting_value.get('weight_unit')
+                                                    ,rir=setting_value.get('rir'))
 
 
 
