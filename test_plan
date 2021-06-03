@@ -1,0 +1,25 @@
+o	Positive tests:
+    o	Add nutrtion plan
+    o	Edit nutrition plan
+    o	Make copy of nutrition plan
+    o	Delete nutriotion plan
+    o	Add a number of -big number - nutrition plans
+    o	Add meal to existing nutrition plan
+    o	Add meal and verify that the configured time was added as expected
+    o	Edit meal
+    o	Delete meal from nutrition plan
+    o	Add a number of -big number- meals per nutrition plan
+    o	Add items to existing meals in nutrition plan
+    o	Edit item
+    o	Add valid values for ingredient and amount, and make sure the kcals are calculated as expected
+    o	Delete item
+    o	Add a number of -big number- items per meal
+    o	Delete items from existing meals
+    o	Delete meals from nutrition plans
+    o	Delete meals that have item configured
+    o	Delete nutrition plans
+    o	Delete nutriion plans that have meals and items configured
+o	Negative tests:
+    o	Add a meal for a nutrition plan and provide an invalid value for time parameter - (string, or an hour that is outside the valid interval)
+    o	Add an item for meal, and provide invalid values for amount (string, negative values, out of range values)
+    o	Add item without providing parameters that are mandatory ( Ingredient, Amount)
