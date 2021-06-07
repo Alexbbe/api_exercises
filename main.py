@@ -64,7 +64,7 @@ class WengerApi:
             if req.status_code == 201:
                 return req, f'The post request for {object} was done successfully'
             else:
-                return {req.status_code}, 'Error  {req.status_code}'
+                return False, f'Error  {req.status_code}'
         else:
             return False, 'Invalid url'
 
@@ -78,7 +78,7 @@ class WengerApi:
         return False, f"The item with {param1} doesn't have id"
 
 
-    def delete_req(self,object, id):
+    def delete_req(self,object, id=None):
 
         g1 = requests.get('https://wger.de/api/v2/')
         url1 = g1.json().get(object)
@@ -86,7 +86,7 @@ class WengerApi:
             url = f"{url1}/{id}"
             req = requests.delete(url=url, headers=self.header)
             if req.status_code not in (200,202,204):
-                return req.status_code, f"The delete for id {id} couldn't be performed"
+                return False, f"The delete for id {id} couldn't be performed"
             return req, f"The delete for {object} with id {id} was performed" \
                          f"successfully! Status code is {req.status_code}"
         else:
@@ -111,10 +111,11 @@ class WengerApi:
         }
         return self.post_req('nutritionplan', data)
 
-    def create_meals_for_nutrition_plans(self,plan):
+    def create_meals_for_nutrition_plans(self,plan,time=None):
 
         data = {
-            'plan': plan
+            'plan': plan,
+            'time':time
         }
         return self.post_req('meal',data)
 
@@ -243,10 +244,31 @@ class WengerApi:
             else:
                 return False, "There are no workouts to be deleted"
 
-    def delete_nutrition_plans(self):
+    def delete_all_nutrition_plans(self):
         nutrition_plans = self.get_req('nutritionplan')
         for nutrition_plan in nutrition_plans[0].get('results',[]):
-            self.delete_req('nutritionplan',nutrition_plan.get('id'))
+            req = self.delete_req('nutritionplan',nutrition_plan.get('id'))
+            if req[0] is False:
+                return req[0]
+        return True
+
+    def delete_all_meals_from_nutrition_plan(self):
+        meals = self.get_req('meal')
+        for meal in meals[0].get('results',[]):
+            req = self.delete_req('meal',meal.get('id'))
+            if req[0] is False:
+                return False
+        return True
+
+    def delete_all_items_from_meal(self):
+        items = self.get_req('mealitem')
+        for item in items[0].get('results',[]):
+            req = self.delete_req('mealitem',item.get('id'))
+
+            if req[0] is False:
+                return False
+        return True
+
 
     def delete_exercise(self, workout_id = None, day_id = None, exercise_id = None):
         if workout_id is not None:
@@ -287,6 +309,47 @@ class WengerApi:
         else:
             req4 = self.delete_workout()
             return req4
+
+    def delete_nutrition_plan(self,nutrtion_plan_id=None,meal_id=None,item_id=None):
+        if nutrtion_plan_id is not None:
+            list_of_nutrition_plans = self.get_req('nutritionplan')
+            list_of_nutrition_plans_ids = list()
+            for nutrition_plan in list_of_nutrition_plans[0].get('results',[]):
+                list_of_nutrition_plans_ids.append(nutrition_plan.get('id'))
+
+            if meal_id is not None:
+                list_of_meals = self.get_req('meal')
+                list_of_meals_id = list()
+                for meal in list_of_meals[0].get('results',[]):
+                    list_of_meals_id.append(meal.get('id'))
+
+                if item_id is not None:
+                    list_of_mealitems = self.get_req('mealitem')
+                    list_of_mealitems_ids = list()
+                    for item in list_of_mealitems[0].get('results',[]):
+                        list_of_mealitems_ids.append(item.get('id'))
+                    if item_id not in list_of_mealitems_ids:
+                        return False, f"The item with id {item_id} doesn't exists in " \
+                                      f"meal {meal_id} and nutrition_plan {nutrtion_plan_id}"
+                    else:
+                        req1 = self.delete_req('mealitem',item_id)
+                        return req1
+                else:
+                    if meal_id not in list_of_meals_id:
+                        return False, f"The meal with id {meal_id} doesn't exists in nutrition_plan {nutrtion_plan_id}"
+                    else:
+                        req2 = self.delete_req('meal', meal_id)
+                        return req2
+            else:
+                if nutrtion_plan_id not in list_of_nutrition_plans_ids:
+                    return False, f"The nutrition_plan_id with id {nutrtion_plan_id} doesn't exists"
+                else:
+                    req3 = self.delete_req('nutritionplan',nutrtion_plan_id)
+                    return req3
+        else:
+            req4 = self.delete_req('nutritionplan')
+            return req4
+
 
 
 
