@@ -1,0 +1,139 @@
+title = "Workouts"
+
+[workouts.workout1]
+    name = "workout1"
+    description="This is workout1"
+    [workouts.workout1.days.day1]
+        description = "Chest"
+        day = [1,]
+        [workouts.workout1.days.day1.exercises.exercise1]
+            sets=3
+            [workouts.workout1.days.day1.exercises.exercise1.settings.setting1]
+                exercise = 88
+                repetition_unit = 1
+                reps = 7
+                weight = "70.00"
+                weight_unit= 1
+                rir = 0.5
+            [workouts.workout1.days.day1.exercises.exercise1.settings.setting2]
+                exercise = 88
+                repetition_unit = 1
+                reps = 7
+                weight = "90.00"
+                weight_unit= 1
+                rir = 0.5
+            [workouts.workout1.days.day1.exercises.exercise1.settings.setting3]
+                exercise = 88
+                repetition_unit = 1
+                reps = 7
+                weight = "100.00"
+                weight_unit= 1
+                rir = 0.5
+
+
+        [workouts.workout1.days.day1.exercises.exercise2]
+            sets=1
+            [workouts.workout1.days.day1.exercises.exercise2.settings.setting1]
+                exercise = 637
+                repetition_unit = 1
+                reps = 10
+                weight = "70.00"
+                weight_unit= 1
+                rir = 1
+
+    [workouts.workout1.days.day2]
+        description = "Back"
+        day = [2,]
+        [workouts.workout1.days.day2.exercises.exercise1]
+            sets=3
+             [workouts.workout1.days.day2.exercises.exercise1.settings.setting1]
+                exercise = 637
+                repetition_unit = 1
+                reps = 10
+                weight = "60.00"
+                weight_unit= 1
+                rir = 1
+            [workouts.workout1.days.day2.exercises.exercise1.settings.setting2]
+                exercise = 637
+                repetition_unit = 1
+                reps = 10
+                weight = "70.00"
+                weight_unit= 1
+                rir = 1
+            [workouts.workout1.days.day2.exercises.exercise1.settings.setting3]
+                exercise = 637
+                repetition_unit = 1
+                reps = 10
+                weight = "80.00"
+                weight_unit= 1
+                rir = 1
+        [workouts.workout1.days.day2.exercises.exercise2]
+        [workouts.workout1.days.day2.exercises.exercise3]
+
+
+    [workouts.workout1.days.day3]
+        description = "Legs"
+        day = [3,]
+        [workouts.workout1.days.day3.exercises.exercise1]
+        [workouts.workout1.days.day3.exercises.exercise2]
+        [workouts.workout1.days.day3.exercises.exercise3]
+
+
+[workouts.workout2]
+    name = "workout2"
+    description="This is workout2"
+     [workouts.workout2.days.day1]
+        description = "Chest3"
+        day = [2,]
+
+    [workouts.workout2.days.day2]
+        description = "Back3"
+        day = [1,]
+
+    [workouts.workout2.days.day3]
+        description = "Legs3"
+        day = [3,4]
+
+[workouts.workout3]
+    name="workout3"
+    description="This is workout3"
+     [workouts.workout3.days.day1]
+        description = "Chest3"
+        day = [2,]
+        [workouts.workout3.days.day1.exercises.exercise1]
+        [workouts.workout3.days.day1.exercises.exercise2]
+        [workouts.workout3.days.day1.exercises.exercise3]
+
+
+    [workouts.workout3.days.day2]
+        description = "Back3"
+        day = [1,]
+
+    [workouts.workout3.days.day3]
+        description = "Legs3"
+        day = [3,4]
+        [workouts.workout3.days.day3.exercises.exercise1]
+        [workouts.workout3.days.day3.exercises.exercise2]
+        [workouts.workout3.days.day3.exercises.exercise3]
+            sets=3
+             [workouts.workout3.days.day3.exercises.exercise3.settings.setting1]
+                exercise = 637
+                repetition_unit = 1
+                reps = 10
+                weight = "60.00"
+                weight_unit= 1
+                rir = 1
+            [workouts.workout3.days.day3.exercises.exercise3.settings.setting2]
+                exercise = 637
+                repetition_unit = 1
+                reps = 10
+                weight = "70.00"
+                weight_unit= 1
+                rir = 1
+            [workouts.workout3.days.day3.exercises.exercise3.settings.setting3]
+                exercise = 637
+                repetition_unit = 1
+                reps = 10
+                weight = "80.00"
+                weight_unit= 1
+                rir = 1

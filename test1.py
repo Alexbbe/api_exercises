@@ -3,7 +3,8 @@ from pprint import pprint
 
 from main import WengerApi
 
-login1 = WengerApi("balbaealexandru@gmail.com","12345678abc","Token 5c4f8bef9dd4e6d72f0868971ac142cca0157431")
+login1 = WengerApi("balbaealexandru@gmail.com",
+                   "12345678abc","Token 5c4f8bef9dd4e6d72f0868971ac142cca0157431")
 
 
 def exercise1():
@@ -17,7 +18,8 @@ def exercise1():
 def exercise2():
     login1.delete_nutrition_plans()
 
-    days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    days_of_week = ['Monday', 'Tuesday', 'Wednesday',
+                    'Thursday', 'Friday', 'Saturday', 'Sunday']
     for day in days_of_week:
         login1.create_nutrition_plan(day)
 
@@ -48,7 +50,6 @@ def exercise2():
                         ingredient = random.choice(list_of_ingredients)
                         kcal += ingredient.get('energy') * (amount/100)
                         if kcal > 1750:
-                            print(kcal)
                             break
                         add_item = login1.add_meal_item(meal.get('id'),ingredient.get('id'),amount)
                         print(add_item)
@@ -59,7 +60,6 @@ def exercise2():
                         print(add_item)
                         kcal += ingredient.get('energy') * (amount/100)
                         if kcal > 1750:
-                            print(kcal)
                             break
 
 
@@ -131,7 +131,8 @@ def exercise4():
                 for exe in list_of_exercises_day:
                     for comments in all_exercise_comments.get('results'):
                         if exe.get('id') == comments.get('exercise'):
-                            comment_file.write(f"The exercise with id <{exe.get('id')}> has comment <{comments.get('comment')}> \n")
+                            comment_file.write(f"The exercise with id <{exe.get('id')}>"
+                                               f" has comment <{comments.get('comment')}> \n")
 
 
             sets_req = login1.get_req('set')
@@ -142,7 +143,8 @@ def exercise4():
             exercise_set_match = zip(list_of_exercises_day,list_of_sets)
 
             for exercises_match in exercise_set_match:
-                setting_req = login1.setting_exercise_set(exercises_match[1].get('id'),exercises_match[0].get('id'),1,6,"70.00",1,"0.5")
+                setting_req = login1.setting_exercise_set(exercises_match[1].get('id'),
+                                                          exercises_match[0].get('id'),1,6,"70.00",1,"0.5")
                 print(setting_req)
 
 
@@ -171,6 +173,7 @@ if __name__ == "__main__":
     exercise7()
     # exercise1()
     # exercise2()
-    exercise4()
+    # exercise4()
     # exercise5()
     # exercise6()
+    # login1.delete_nutrition_plans()
