@@ -1,3 +1,5 @@
+import random
+
 import requests
 from pprint import pprint
 import json
@@ -50,7 +52,7 @@ class WengerApi:
             if g.status_code == 200:
                 return g.json(), f"The get request for {object} was performed successfully"
             else:
-                return g.status_code, "Couldn't make the request!"
+                return False, "Couldn't make the request!"
         else:
             return False, 'Invalid url'
 
@@ -218,6 +220,16 @@ class WengerApi:
 
         return self.post_req('schedulestep',data)
 
+
+    def get_random_id(self,object):
+        object_req = self.get_req(object)
+        list_of_ids = list()
+        if object_req[0]:
+           for elem in object_req[0].get('results'):
+               list_of_ids.append(elem.get('id'))
+        return random.choice(list_of_ids)
+
+
     def delete_workout(self, id=None):
 
         workouts = self.get_req('workout')
@@ -350,7 +362,18 @@ class WengerApi:
             req4 = self.delete_req('nutritionplan')
             return req4
 
+    def get_random_num_outside_list(self, object):
 
+        request = self.get_req(object)
+        list_of_ids = list()
+        for req in request[0].get('results', []):
+            list_of_ids.append(req.get('id'))
+        print(list_of_ids)
+        num = random.choice(list_of_ids)
+        while num in list_of_ids:
+            num = random.randint(10000,99999)
+            if num not in list_of_ids:
+                return num
 
 
     #TOML part
