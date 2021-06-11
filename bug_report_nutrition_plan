@@ -1,0 +1,34 @@
+Bug #1
+Summary: The time for a meal cannot be configured via GUI
+Tester:  Alexandru Balbae
+
+Description:
+        date & time: 06/09/2021  16:45:00
+
+		Software configuration:
+			-Make sure you are logged in on wger application
+
+		Procedure steps:
+			-Add a nutrition plan
+			-For the added nutrition plan add new meal
+			-Set the time for the meal
+			-Verify the meal was added with the time configured as expected
+
+		Expected results:
+			-The nutrition plan should be added
+			-The meal should be added with the time configured
+
+		Actual results:
+			-The nutrition plan was added
+			-The meal was added, but the time wasn't configured
+
+		Other information:
+			-The problem doesn't reproduce if we add the meal using POST request via automation script
+
+
+Reproducibility:	5/5
+
+
+Impact:	Severity (2) - operational error, wrong result, loss of functionality
+		Priority (2) - must fix before the product is released
+		Customer won't be able to add time for a specific meal - a parameter that is mandatory for every nutrition plan
